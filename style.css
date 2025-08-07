@@ -1,0 +1,36 @@
+body {
+  font-family: sans-serif;
+  background: #111;
+  color: #eee;
+  text-align: center;
+  padding: 20px;
+}
+
+input, button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+#eqContainer {
+  display: flex;
+  overflow-x: auto;
+  height: 300px;
+  border: 1px solid #444;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.eq-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 2px;
+}
+
+.eq-slider input {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  width: 100px;
+  height: 200px;
+}
