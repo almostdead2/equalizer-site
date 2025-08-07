@@ -1,84 +1,83 @@
-let audioCtx, sourceNode, eqNodes = [];
-let playing = false;
-const NUM_BANDS = 500;
-let audioBuffer;
 
-const fileInput = document.getElementById("audioFile");
-const playPauseBtn = document.getElementById("playPause");
-const eqContainer = document.getElementById("eqContainer");
+const canvas = document.getElementById('eq-canvas');
+const ctx = canvas.getContext('2d');
 
-function createEQ() {
-  let lastNode;
-  for (let i = 0; i < NUM_BANDS; i++) {
-    const freq = 20 * Math.pow(2, i * (Math.log2(20000 / 20) / NUM_BANDS));
-    const eq = audioCtx.createBiquadFilter();
-    eq.type = "peaking";
-    eq.frequency.value = freq;
-    eq.Q.value = 1.0;
-    eq.gain.value = 0;
-    if (lastNode) lastNode.connect(eq);
-    eqNodes.push(eq);
-    lastNode = eq;
+const width = canvas.width;
+const height = canvas.height;
+const bands = 150;
+const freqs = Array.from({length: bands}, (_, i) => i);
+let gains = new Array(bands).fill(0);
 
-    const slider = document.createElement("div");
-    slider.className = "eq-slider";
-    slider.innerHTML = `
-      <input type="range" min="-30" max="30" value="0" step="0.1" data-index="${i}" />
-      <small>${Math.round(freq)}Hz</small>
-    `;
-    eqContainer.appendChild(slider);
-  }
+canvas.addEventListener('mousedown', onMouseDown);
 
-  document.querySelectorAll('input[type="range"]').forEach(slider => {
-    slider.addEventListener('input', e => {
-      const i = e.target.dataset.index;
-      const gain = parseFloat(e.target.value);
-      eqNodes[i].gain.value = gain;
-    });
-  });
-
-  return lastNode;
+function drawEQ() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2 - gains[0]);
+    for (let i = 1; i < bands; i++) {
+        const x = (i / (bands - 1)) * width;
+        const y = height / 2 - gains[i];
+        ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'lime';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 }
 
-async function setupAudio(file) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const arrayBuffer = await file.arrayBuffer();
-  audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-  sourceNode = audioCtx.createBufferSource();
-  sourceNode.buffer = audioBuffer;
+function onMouseDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-  eqNodes = [];
-  eqContainer.innerHTML = "";
-  const lastEQ = createEQ();
+    const band = Math.round((x / width) * (bands - 1));
+    gains[band] = height / 2 - y;
+    drawEQ();
 
-  sourceNode.connect(eqNodes[0]);
-  lastEQ.connect(audioCtx.destination);
+    function onMouseMove(e) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const band = Math.round((x / width) * (bands - 1));
+        gains[band] = height / 2 - y;
+        drawEQ();
+    }
+
+    function onMouseUp() {
+        canvas.removeEventListener('mousemove', onMouseMove);
+        canvas.removeEventListener('mouseup', onMouseUp);
+    }
+
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
 }
 
-fileInput.addEventListener("change", async () => {
-  if (fileInput.files.length > 0) {
-    await setupAudio(fileInput.files[0]);
-  }
-});
+function resetEQ() {
+    gains.fill(0);
+    drawEQ();
+}
 
-playPauseBtn.addEventListener("click", () => {
-  if (!audioBuffer) return;
+function saveEQ() {
+    const blob = new Blob([gains.join(',')], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'eq_profile.txt';
+    a.click();
+}
 
-  if (!playing) {
-    sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-    sourceNode.connect(eqNodes[0]);
-    sourceNode.start();
-    playing = true;
-    playPauseBtn.textContent = "Stop";
-
-    sourceNode.onended = () => {
-      playing = false;
-      playPauseBtn.textContent = "Play";
+function loadEQ(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const loaded = text.split(',').map(Number);
+        if (loaded.length === bands) {
+            gains = loaded;
+            drawEQ();
+        } else {
+            alert('Invalid EQ file');
+        }
     };
-  } else {
-    sourceNode.stop();
-    playing = false;
-    playPauseBtn.textContent = "Play";
-  }
-});
+    reader.readAsText(file);
+}
+
+drawEQ();
