@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equalizer Site</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MP3 Player with 500-Band EQ</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Interactive Equalizer (150+ Bands)</h1>
-    <canvas id="eq-canvas" width="1500" height="500"></canvas>
-    <div class="controls">
-        <button onclick="resetEQ()">Reset</button>
-        <button onclick="saveEQ()">Save</button>
-        <input type="file" accept=".txt" onchange="loadEQ(event)">
-    </div>
-    <script src="script.js"></script>
+  <h1>MP3 Player + 500-Band Equalizer</h1>
+
+  <input type="file" id="audioFile" accept=".mp3">
+  <button id="playPause">Play</button>
+
+  <div id="eqContainer">
+    <!-- Equalizer sliders will be added here -->
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
